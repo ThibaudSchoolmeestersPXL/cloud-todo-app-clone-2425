@@ -1,35 +1,84 @@
-const Todo = require('../models/todo.model');
+const aws = require('./../aws');
+const uuid = require('uuid');
+
+const tableName = process.env.AWS_TABLE_NAME || todo;
 
 exports.getTodos = (req, res) => {
-    Todo.find()
-        .then(todos => res.json(todos))
-        .catch(err => res.status(400).json('Error: ' + err));
-};
+    const params = {
+        TableName: tableName
+    };
 
-exports.createTodo = (req, res) => {
-    const newTodo = new Todo(req.body);
-
-    newTodo.save()
-        .then((todo) => res.json(todo))
-        .catch(err => res.status(400).json('Error: ' + err));
+    aws.scan(params, (err, data) => {
+        if (err) {
+            console.error(err);
+            res.status(500).send(err);
+        } else {
+            res.json(data.Items);
+        }
+    });
 }
 
-exports.deleteTodo = (req, res) => {
-    Todo.findByIdAndDelete(req.params.id)
-        .then(() => res.json('Todo deleted.'))
-        .catch(err => res.status(400).json('Error: ' + err));
+exports.createTodo = (req, res) => {
+    const item = req.body;
+    item._id = uuid.v1();
+    item.completed = false;
+
+    const params = {
+        TableName: tableName,
+        Item: item
+    };
+
+    aws.put(params, (err, data) => {
+        if (err) {
+            console.error(err);
+            res.status(500).send(err);
+        } else {
+            res.json(data);
+        }
+    });
 }
 
 exports.updateTodo = (req, res) => {
-    Todo.findById(req.params.id)
-        .then(todo => {
-            todo.title = req.body.title;
-            todo.label = req.body.label;
-            todo.completed = req.body.completed;
+    const item = req.body;
 
-            todo.save()
-                .then((todo) => res.json(todo))
-                .catch(err => res.status(400).json('Error: ' + err));
-        })
-        .catch(err => res.status(400).json('Error: ' + err));
+    const params = {
+        TableName: tableName,
+        Key: {
+            _id: item._id
+        },
+        UpdateExpression: 'set completed = :val',
+        ExpressionAttributeValues: {
+            ':val': item.completed
+        },
+        ReturnValues: 'ALL_NEW'
+    }
+
+    aws.update(params, (err, data) => {
+        if (err) {
+            console.error(err);
+            res.status(500).send(err);
+        } else {
+            res.json(data);
+        }
+    });
+}
+
+exports.deleteTodo = (req, res) => {
+    const itemId = req.params.id;
+ 
+    const params = {
+        TableName: tableName,
+        Key: {
+            _id: itemId
+        }
+    }
+
+    aws.delete(params, (err, data) => {
+        if (err) {
+            console.error(err);
+            res.status(500).send(err);
+        } else {
+            res.json(data);
+        }
+    });
 }
