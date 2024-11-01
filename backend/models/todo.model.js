@@ -1,11 +1,29 @@
-const mongoose = require('mongoose');
+const Sequelize = require('sequelize');
+const sequelize = require('./../db');
 
-const TodoSchema = new mongoose.Schema({
-    title: { type: String, required: true },
-    label: { type: String, required: true },
-    completed: { type: Boolean, default: false },
-    createdAt: { type: Date, default: Date.now },
+const Todo = sequelize.define('todo', {
+    title: {
+        type: Sequelize.STRING,
+        allowNull: false
+    },
+    label: {
+        type: Sequelize.STRING,
+        allowNull: false
+    },
+    completed: {
+        type: Sequelize.BOOLEAN,
+        allowNull: false,
+        defaultValue: false
+    },
+    _id: {
+        type: Sequelize.UUID,
+        defaultValue: Sequelize.UUIDV4,
+        primaryKey: true
+    }
 });
 
-const Todo = mongoose.model('Todo', TodoSchema);
-module.exports = Todo
+sequelize.sync().then(() => 
+    console.log('Todo table created successfully')
+);
+
+module.exports = Todo;
