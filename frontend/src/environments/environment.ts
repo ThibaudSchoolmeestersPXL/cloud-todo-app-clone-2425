@@ -4,7 +4,7 @@
 
 export const environment = {
   production: false,
-  apiurl: 'http://localhost:3000',
+  apiurl: 'http://internal-stage-lb-be-1530448909.us-east-1.elb.amazonaws.com:3000',
 };
 
 /*
